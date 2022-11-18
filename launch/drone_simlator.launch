@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="extra_gazebo_args" default=""/>
+  <arg name="gui" default="false"/>
+  <arg name="recording" default="false"/>
+  <!-- Note that 'headless' is currently non-functional.  See gazebo_ros_pkgs issue #491 (-r arg does not disable
+       rendering, but instead enables recording). The arg definition has been left here to prevent breaking downstream
+       launch files, but it does nothing. -->
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="physics" default="ode"/>
+  <arg name="verbose" default="false"/>
+  <arg name="output" default="screen"/>
+  <!-- <arg name="world_name" default="$(find gzb_ros)/worlds/iris_arducopter_runway.world"/> Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+  <arg name="respawn_gazebo" default="false"/>
+  <arg name="use_clock_frequency" default="false"/>
+  <arg name="pub_clock_frequency" default="100"/>
+  <arg name="enable_ros_network" default="true" />
+  <arg name="server_required" default="false"/>
+  <arg name="gui_required" default="false"/>
+
+  <!-- set use_sim_time flag -->
+  <param name="/use_sim_time" value="$(arg use_sim_time)"/>
+
+
+  <!-- world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find gzb_ros)/worlds/iris_arducopter_runway.world" />
+    <arg name="gui" value="$(arg gui)" />
+  </include>
+
+  <!-- drone control -->
+  <node pkg="iq_gnc" type="drone_control.py" name="command" output="screen" ns="/drone1">
+    <param name="namespace" value="/drone1"/>
+    <param name="use_sim_time"  value="true" />
+  </node>
+
+  <!-- apm -->
+  <node pkg="mavros" type="mavros_node" name="mavros" required="false" clear_params="true" output="screen" respawn="true" ns="/drone1">
+		<param name="fcu_url" value="udp://127.0.0.1:14551@14555" />
+		<param name="gcs_url" value="" />
+		<param name="target_system_id" value="1" />
+		<param name="target_component_id" value="1" />
+		<param name="fcu_protocol" value="v2.0" />
+
+
+		<rosparam command="load" file="$(find mavros)/launch/apm_pluginlists.yaml" />
+		<rosparam command="load" file="$(find mavros)/launch/apm_config.yaml" />
+	</node>
+
+</launch>
